@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: department-service
+  namespace: microservices
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: department-service
+  template:
+    metadata:
+      labels:
+        app: department-service
+    spec:
+      containers:
+        - name: department-service
+          image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-2.amazonaws.com/department-service:latest
+          ports:
+            - containerPort: 8082
+          resources:
+            requests: { cpu: 250m, memory: 384Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8082 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8082 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: department-service
+  namespace: microservices
+spec:
+  type: ClusterIP
+  selector:
+    app: department-service
+  ports:
+    - port: 8082
+      targetPort: 8082
